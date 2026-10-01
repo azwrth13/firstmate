@@ -1,0 +1,8 @@
+ok - real tmux: agy separator proof survives independent idle signal loss and preserves drafts (Linux)
+ok - real tmux: kill removes the window and the readable session inventory authoritatively classifies it missing
+FM_TEST_END 2026-10-01T22:13:39Z tests/fm-backend-tmux-smoke.test.sh exit=0 duration_ms=766 gate_skip=false
+FM_TEST_SUMMARY total=2 failed=0 skipped_gate=0 duration_ms=14835
+FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=766 failed=0
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=1 duration_ms=13954 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-composer-lib.test.sh duration_ms=13954
+FM_TEST_SLOWEST rank=2 script=tests/fm-backend-tmux-smoke.test.sh duration_ms=766

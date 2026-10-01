@@ -1,0 +1,5 @@
+herdr native identity: $'agy\tidle'
+base footer-only (no identity): unknown
+base with native identity:     unknown
+fix footer-only (no identity): empty
+fix with native identity:     empty

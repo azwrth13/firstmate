@@ -1,0 +1,8 @@
+ok - agy (1.2.14): the real agy worker processed its launch prompt
+ok - agy (1.2.14): the real agy busy footer matches fm_busy_agy_tail_busy in flight
+ok - agy (1.2.14): a single Escape cancels the real agy turn
+ok - agy (1.2.14): exit and relaunch refuse a typed draft and preserve the agent
+ok - agy (1.2.14): the real idle composer classifies empty
+ok - agy (1.2.14): native idle identity and rendered footer each independently prove the real composer empty
+ok - agy (1.2.14): fm-control relaunch replaces the idle agent in the same endpoint and worktree
+ok - agy (1.2.14): fm-control exit stops the idle agent and preserves the endpoint

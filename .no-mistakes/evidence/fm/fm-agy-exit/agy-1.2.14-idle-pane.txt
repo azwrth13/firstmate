@@ -1,0 +1,13 @@
+HOME=/tmp/fm-agyrepro.Kxoh/home agy
+user@host:~/.no-mistakes/worktrees/438e17b416f1/01M3WR8GS92WWSAV7DJR2PYTKJ$ HOME=/tmp/fm-agyrepro.Kxoh/home agy
+
+      ▄▀▀▄        Antigravity CLI 1.2.14
+     ▀▀▀▀▀▀       <redacted> (Google AI Pro)
+    ▀▀▀▀▀▀▀▀      Gemini 3.8 Flash (High)
+   ▄▀▀    ▀▀▄     /home/azur/.no-mistakes/worktrees/438e17b416f1/01M3WR8GS92WWSAV7DJR2PYTKJ
+  ▄▀▀      ▀▀▄
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+>
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+? for shortcuts                                                                                 Gemini 3.8 Flash · high

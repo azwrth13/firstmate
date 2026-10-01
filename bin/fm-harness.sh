@@ -19,6 +19,15 @@
 #                                        codex-native/<id>. Other efforts retain
 #                                        their adapter's existing policy. Native
 #                                        Codex validates model support at startup.
+#        fm-harness.sh codex-supports-effort <model> <effort>
+#                                        Test the explicit model's supported_reasoning_levels
+#                                        in ${CODEX_HOME:-$HOME/.codex}/models_cache.json.
+#                                        An absent/unreadable/malformed catalog or default
+#                                        model retains low|medium|high|xhigh support;
+#                                        max requires a matching catalog entry. A valid
+#                                        catalog's missing model/level is unsupported.
+#                                        Unsupported efforts stay recorded but are omitted
+#                                        from launch flags. Ultra refusal is owned above.
 #        fm-harness.sh ancestry [<pid>] print "<strength> <harness>" for the nearest
 #                                        harness process at or above <pid> (default this
 #                                        process), or nothing when the walk finds none.
@@ -516,6 +525,24 @@ resolve_secondmate_effort() {
   secondmate_field 3
 }
 
+codex_supports_effort() {
+  local model=${1:-} effort=${2:-} catalog result
+  case "$effort" in low|medium|high|xhigh|max) ;; *) return 1 ;; esac
+  catalog="${CODEX_HOME:-$HOME/.codex}/models_cache.json"
+  if [ -n "$model" ] && [ "$model" != default ] && [ -r "$catalog" ]; then
+    # Read once: malformed catalog data cannot accidentally authorize a level.
+    result=$(jq -r --arg model "$model" --arg effort "$effort" '
+      if (.models | type) != "array" then error("invalid model catalog")
+      else any(.models[]; .slug == $model and
+        any(.supported_reasoning_levels[]?; .effort == $effort)) end
+    ' "$catalog" 2>/dev/null) || result=
+    case "$result" in true) return 0 ;; false) return 1 ;; esac
+  fi
+  # Preserve the established baseline when model capabilities are unavailable.
+  # Extended levels must be proven, never guessed from a model name.
+  case "$effort" in low|medium|high|xhigh) return 0 ;; *) return 1 ;; esac
+}
+
 validate_native_effort() {
   local harness=${1:-} model=${2:-} effort=${3:-}
   [ "$effort" = ultra ] || return 0
@@ -529,6 +556,7 @@ validate_native_effort() {
 }
 
 case "${1:-}" in
+  codex-supports-effort) shift; codex_supports_effort "$@" ;;
   validate-native-effort) shift; validate_native_effort "$@" ;;
   ancestry)
     case "${2:-}" in

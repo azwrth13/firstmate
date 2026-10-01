@@ -2567,16 +2567,10 @@ effort_flag_for_harness() {
     esac
     ;;
   codex)
-    # The installed codex config schema uses model_reasoning_effort. The
-    # installed model catalog supports max for gpt-5.6-luna; keep that level
-    # scoped to the model whose catalog entry advertises it.
-    case "$effort" in
-    low | medium | high | xhigh) printf -- '-c %s ' "$(shell_quote "model_reasoning_effort=\"$effort\"")" ;;
-    max)
-      [ "$model" = gpt-5.6-luna ] || return 0
-      printf -- '-c %s ' "$(shell_quote 'model_reasoning_effort="max"')"
-      ;;
-    esac
+    # fm-harness owns catalog capability lookup and unavailable-catalog fallback.
+    if "$SCRIPT_DIR/fm-harness.sh" codex-supports-effort "$model" "$effort"; then
+      printf -- '-c %s ' "$(shell_quote "model_reasoning_effort=\"$effort\"")"
+    fi
     ;;
   grok)
     # grok exposes both --effort and --reasoning-effort; firstmate's profile

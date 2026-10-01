@@ -139,12 +139,13 @@ agy stays out of the session-lock name vocabulary in `bin/fm-session-lock-lib.sh
 
 Byte-level capture of the idle pane shows a bare unstyled `>` between two full-width `─` rules, with an unstyled `? for shortcuts` cell and a dim (`SGR 2`) model cell in the status row below.
 On agy 1.2.14 (Linux x64, Herdr 0.9.3, 2026-10-01), the shared classifier proves this separated `>` composer through native `agy` idle/done identity or its adjacent `? for shortcuts` footer.
+That proof yields `empty` only for the `bin/fm-control.sh` exit-command guard (`FM_COMPOSER_LIFECYCLE=1`), which exit and relaunch share; every other read, including send confirmation, still gets `unknown`, because an idle empty composer after Enter is also what a send whose text never landed leaves behind.
 The portable regressions in `tests/fm-composer-lib.test.sh` cover both signals independently across every backend capability profile, contradictory native state, and plain, dim, and wrapped drafts.
-`tests/fm-backend-tmux-smoke.test.sh` captures the same shape from real processes without a harness: the native identity probe is explicitly absent on Linux, the rendered footer alone proves empty, and removing that footer changes the verdict to unknown until native idle identity is supplied.
+`tests/fm-backend-tmux-smoke.test.sh` captures the same shape from real processes without a harness: the tmux identity probe reports nothing because it identifies only live Pi processes, the rendered footer alone proves empty for a lifecycle read, a send whose text never appears is not reported delivered, and removing that footer changes the verdict to unknown until native idle identity is supplied.
 The bare glyph without the separator proof stays unknown, and text in the identified composer stays pending.
-Steering still confirms delivery: the Herdr submit core leads with the native `idle`-to-`working` transition, which agy performs, and the delivery footer regex covers the tmux path.
+Steering confirms delivery only from turn-started evidence: the Herdr submit core leads with the native `idle`-to-`working` transition, which agy performs, and the delivery footer regex covers the tmux path.
 agy renders the busy footer late for that confirm loop - about 1.5 s after Enter for a short steer and 4-5 s for a realistic longer brief, measured live on `agy 1.2.1` (2026-09-12) against the shared budget's 3 x 0.4 s - so `bin/fm-send.sh` gives agy typed targets a longer default submit-confirm budget (20 retries, about 8 s at the default cadence); an explicit `FM_SEND_RETRIES` still wins and every other harness keeps the shared 3-retry default.
-`tests/fm-send-agy-confirm.test.sh` pins the raised default and `tests/fm-agy-harness.test.sh` pins the Herdr transition path.
+`tests/fm-send-agy-confirm.test.sh` pins the raised default, `tests/fm-agy-harness.test.sh` pins the Herdr transition path, and `tests/fm-backend-herdr.test.sh` pins that an idle empty agy composer after Enter is not reported delivered.
 The longer delivery-confirmation budget remains independent of composer classification.
 
 ## Supervised task: spawn, steer, relaunch, and exit through the new path
@@ -163,6 +164,7 @@ The guard uses `bin/fm-herdr-lab.sh` for a named isolated session, a copied cred
 Run it from an isolated git worktree to exercise same-copy relaunch.
 It submits real prompts, so it remains opt-in and names the installed agy version on failure.
 It tests the public `fm-control.sh` exit and relaunch entry points, including their refusal to overwrite a draft, instead of bypassing the composer guard with raw `/quit` input.
+The transcript below was recorded before the empty proof was restricted to lifecycle reads; the guard has since gained an assertion that an ordinary composer read of the same idle pane stays `unknown`, which has not yet been re-run live.
 
 ```sh
 FM_AGY_SIGNALS_LIVE=1 bash bin/fm-test-run.sh tests/fm-agy-signals-live-e2e.test.sh

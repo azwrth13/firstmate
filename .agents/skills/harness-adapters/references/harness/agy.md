@@ -21,7 +21,7 @@ Verified as a CREWMATE and SCOUT adapter only; `../../../../../bin/fm-spawn.sh` 
 | Resume | `--continue` and `--conversation` exist but carry no verified pane-resume contract; use deterministic relaunch. |
 | Model | `--model <id>` with the bare catalog id from `agy models` (for example `gemini-3.8-flash-high`); `bin/fm-spawn.sh` refuses a requested id a reachable listing omits. The listing is a remote fetch, so the probe runs stdin-detached under the shared hard bound and an unreachable or hung listing launches unvalidated with a notice. |
 | Effort | `--effort low\|medium\|high`; `xhigh` and `max` stay in task metadata under the record-and-omit contract. |
-| Composer | `>` between two horizontal rules; `bin/fm-composer-lib.sh` owns its proof from native idle identity or the adjacent idle footer and preserves typed drafts; see `docs/verification/agy.md` for the current live guard. |
+| Composer | `>` between two horizontal rules; `bin/fm-composer-lib.sh` owns its proof from native idle identity or the adjacent idle footer, accepted as `empty` only by the `fm-control` exit/relaunch guard and never as send confirmation, and preserves typed drafts; see `docs/verification/agy.md` for the current live guard. |
 
 ## Trust, and where the decision persists
 

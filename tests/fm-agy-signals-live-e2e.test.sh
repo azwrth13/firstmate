@@ -19,9 +19,13 @@ LAB_HOME_HELPER="$ROOT/bin/fm-lab-home.sh"
 SESSION=$("$LAB_HELPER" name agy-signals)
 VERSION=$(agy --version 2>/dev/null | head -1)
 
+# LAB_PROVISIONED is set before provisioning starts, so a provision that
+# fails after creating its fleet-state tripwire is still torn down. A teardown
+# failure is reported but does not strand the local lab directory.
 cleanup() {
+  local status=0
   if [ "$LAB_PROVISIONED" = 1 ]; then
-    PATH=$BASE_PATH "$LAB_HELPER" teardown "$SESSION" || return 1
+    PATH=$BASE_PATH "$LAB_HELPER" teardown "$SESSION" || status=1
     LAB_PROVISIONED=0
   fi
   if [ -n "$LAB" ]; then
@@ -31,6 +35,7 @@ cleanup() {
     chmod -R u+w "$LAB" || return 1
     rm -rf -- "$LAB"
   fi
+  return "$status"
 }
 fail() { printf 'not ok - agy (%s): %s\n' "$VERSION" "$1" >&2; exit 1; }
 pass() { printf 'ok - agy (%s): %s\n' "$VERSION" "$1"; }
@@ -39,8 +44,8 @@ LAB=$(mktemp -d "${TMPDIR:-/tmp}/fm-agy-signals.XXXXXX") || fail "could not crea
 trap 'cleanup || exit 1' EXIT
 FM_HOME=$("$LAB_HOME_HELPER" create "$LAB/fm-home") || fail "could not create a lab home"
 export FM_HOME
-"$LAB_HELPER" provision "$SESSION" || fail "could not provision the guarded Herdr lab"
 LAB_PROVISIONED=1
+"$LAB_HELPER" provision "$SESSION" || fail "could not provision the guarded Herdr lab"
 WORKSPACE=$ROOT
 AGY_HOME="$LAB/home"
 mkdir -p "$AGY_HOME" "$LAB/shim" || fail "could not create the throwaway agy HOME"
@@ -227,28 +232,29 @@ done
 pass "exit and relaunch refuse a typed draft and preserve the agent"
 keys ctrl+u || fail "could not clear the test draft"
 for _ in $(seq 1 120); do
-  [ "$(fm_backend_composer_state herdr "$TARGET")" = empty ] && break
+  [ "$(FM_COMPOSER_LIFECYCLE=1 fm_backend_composer_state herdr "$TARGET")" = empty ] && break
   sleep 0.5
 done
-[ "$(fm_backend_composer_state herdr "$TARGET")" = empty ] || fail "idle composer did not classify empty"
+[ "$(FM_COMPOSER_LIFECYCLE=1 fm_backend_composer_state herdr "$TARGET")" = empty ] || fail "idle composer did not classify empty"
+[ "$(fm_backend_composer_state herdr "$TARGET")" = unknown ] || fail "idle composer proved empty outside a lifecycle read"
 pass "the real idle composer classifies empty"
 identity=$(fm_backend_herdr_composer_identity "$TARGET") || fail "native idle identity is unavailable"
 case "$identity" in $'agy\tidle'|$'agy\tdone') ;; *) fail "native identity is not agy idle/done" ;; esac
 screen=$(run pane read "$PANE" --source visible --format ansi) || fail "could not capture the idle composer"
-[ "$(fm_composer_classify_screen 'styled=1' "$screen")" = empty ] || fail "idle footer alone did not prove empty"
+[ "$(FM_COMPOSER_LIFECYCLE=1 fm_composer_classify_screen 'styled=1' "$screen")" = empty ] || fail "idle footer alone did not prove empty"
 without_footer=$(printf '%s\n' "$screen" | sed '/? for shortcuts/d')
 case "$without_footer" in *'? for shortcuts'*) fail "footer removal was vacuous" ;; esac
-[ "$(fm_composer_classify_screen 'styled=1' "$without_footer")" = unknown ] || fail "signal loss did not remove footer proof"
-[ "$(fm_composer_classify_screen $'styled=1\nidentity=1' "$without_footer" '' "$identity")" = empty ] || fail "native idle identity alone did not prove empty"
+[ "$(FM_COMPOSER_LIFECYCLE=1 fm_composer_classify_screen 'styled=1' "$without_footer")" = unknown ] || fail "signal loss did not remove footer proof"
+[ "$(FM_COMPOSER_LIFECYCLE=1 fm_composer_classify_screen $'styled=1\nidentity=1' "$without_footer" '' "$identity")" = empty ] || fail "native idle identity alone did not prove empty"
 pass "native idle identity and rendered footer each independently prove the real composer empty"
 
 out=$(control relaunch --note "Reply with exactly the requested sum; preserve the copy") || fail "idle relaunch failed: $out"
 case "$out" in relaunched*) ;; *) fail "relaunch did not confirm replacement: $out" ;; esac
 for _ in $(seq 1 480); do
-  [ "$(fm_backend_composer_state herdr "$TARGET")" = empty ] && break
+  [ "$(FM_COMPOSER_LIFECYCLE=1 fm_backend_composer_state herdr "$TARGET")" = empty ] && break
   sleep 0.5
 done
-[ "$(fm_backend_composer_state herdr "$TARGET")" = empty ] || fail "replacement never returned to an empty composer"
+[ "$(FM_COMPOSER_LIFECYCLE=1 fm_backend_composer_state herdr "$TARGET")" = empty ] || fail "replacement never returned to an empty composer"
 pass "fm-control relaunch replaces the idle agent in the same endpoint and worktree"
 out=$(control exit) || fail "idle exit failed: $out"
 case "$out" in stopped*) ;; *) fail "exit did not confirm the stopped agent: $out" ;; esac

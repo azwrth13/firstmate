@@ -1122,8 +1122,8 @@ else
     ;;
   *) settle=0.3 ;;
   esac
-  # Per-harness submit-confirm budget. agy's composer proves empty only from
-  # idle identity or its idle footer, never once a turn starts, so a landed
+  # Per-harness submit-confirm budget. agy's composer proves empty only for
+  # fm-control lifecycle reads, never for send confirmation, so a landed
   # submit is acknowledged only by the idle-to-busy
   # transition poll, and agy renders its verified busy footer well after the
   # shared budget expires: ~1.5s after Enter for a short steer, ~4-5s for a

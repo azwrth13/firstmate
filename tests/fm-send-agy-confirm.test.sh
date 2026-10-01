@@ -3,7 +3,7 @@
 #
 # A typed send to an explicit tmux agy endpoint is acknowledged only by the
 # submit core's idle-to-busy transition poll: agy's composer proves empty only
-# from idle identity or its idle footer, never once a turn starts, so the poll watching the pane's verified
+# for fm-control lifecycle reads, never for sends, so the poll watching the pane's verified
 # `esc to cancel` busy footer is the only proof a landed Enter can get. agy
 # renders that footer ~1.5s after Enter for a short steer and ~4s for a
 # multi-line brief (live-measured on agy 1.2.1), while the shared default

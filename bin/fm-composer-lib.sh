@@ -79,7 +79,9 @@
 #                pair carries the shape and no identity is needed.
 #                agy 1.2.14 puts `>` inside the pair: that shape requires
 #                native agy idle/done identity OR the adjacent `? for shortcuts`
-#                footer, with contradictory native identity/state refusing.
+#                footer, with contradictory native identity/state refusing,
+#                and proves `empty` only for lifecycle reads
+#                (FM_COMPOSER_LIFECYCLE=1), never for send confirmation.
 #                The shell glyph alone remains unknown, and every nonblank
 #                content byte after it is pending (no ghost stripping).
 #
@@ -380,8 +382,8 @@ fm_composer_strip_ghost() {
 # outside its composer and the composer verdict is therefore always `unknown`.
 # agy's `esc to cancel` is part of the union for the same reason: an explicit
 # tmux agy endpoint reaches the submit core with no recorded harness, and its
-# composer cannot prove empty once the idle footer leaves, so the busy footer is the only
-# turn-started acknowledgement that path can read.
+# `>` composer proves empty only for lifecycle reads, so the busy footer is the
+# only turn-started acknowledgement that path can read.
 FM_DELIVERY_BUSY_REGEX_DEFAULT='esc (to )?interrupt|Working(\.\.\.|…)|Ctrl\+c:cancel|ctrl\+c to stop|esc[[:space:]]+to[[:space:]]+cancel|esc twice to interrupt|^[[:space:]]*❭ Guide Devin while it works$'
 FM_DELIVERY_CLAUDE_BUSY_REGEX_DEFAULT='esc to interrupt|…[[:space:]]+\([0-9]+[smh]'
 # Devin 3000.11.1: the working composer and interrupt hint are independent
@@ -1811,8 +1813,12 @@ _fm_composer_classify_bare_pi_overlap() {  # <screen> <styled> <has-identity> <i
 
 # agy's separated shell-glyph composer is proven by native identity or its
 # adjacent idle footer, never by `>` alone. Inspect plain content so styled
-# drafts cannot disappear as ghost text. This path is shared by every backend;
-# no lifecycle caller bypasses the ordinary proven-empty requirement.
+# drafts cannot disappear as ghost text. This path is shared by every backend.
+# An idle empty composer is also exactly what a send whose text never landed
+# leaves after Enter, so it is not delivery evidence: the proof yields `empty`
+# only for a lifecycle read (FM_COMPOSER_LIFECYCLE=1, set by fm-control's
+# exit-command guard) and `unknown` for every other consumer, which keeps send
+# confirmation on agy's turn-started evidence.
 _fm_composer_agy_verdict() {  # <screen> <has-identity> <identity>
   local screen=$1 has_identity=$2 identity=$3 plain row content first=1 state=empty
   local agent='' status='' footer
@@ -1855,7 +1861,9 @@ _fm_composer_agy_verdict() {  # <screen> <has-identity> <identity>
   esac
   if [ "$state" = pending ]; then printf 'pending'; return; fi
   case "$agent:$status" in
-    agy:idle|agy:done|:) printf 'empty' ;;
+    agy:idle|agy:done|:)
+      if [ "${FM_COMPOSER_LIFECYCLE:-0}" = 1 ]; then printf 'empty'; else printf 'unknown'; fi
+      ;;
     *) printf 'unknown' ;;
   esac
 }

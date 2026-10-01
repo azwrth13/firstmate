@@ -961,6 +961,13 @@ test_selected_content_is_composer_scoped_and_wrap_normalized() {
 test_matrix_agy_separated_independent_idle_signals() {
   local screen caps status draft
   screen=$'────────────────────────\n>\n────────────────────────\n? for shortcuts    Gemini 3.8 Flash · low'
+  # An idle empty agy composer is also what a lost send leaves after Enter, so
+  # only a lifecycle read may treat it as proven empty.
+  for caps in "$CAPS_STYLED" "$CAPS_STYLED_NOID" "$CAPS_PLAIN" "$CAPS_TMUX"; do
+    assert_screen "agy idle footer is not send evidence" unknown "$caps" "$screen" 1 probe-absent
+  done
+  assert_screen "agy native idle is not send evidence" unknown "$CAPS_STYLED" "$screen" '' $'agy\tidle'
+  export FM_COMPOSER_LIFECYCLE=1
   for caps in "$CAPS_STYLED" "$CAPS_STYLED_NOID" "$CAPS_PLAIN" "$CAPS_TMUX"; do
     assert_screen "agy idle footer without native identity" empty "$caps" "$screen" 1 probe-absent
     for draft in '> a draft' $'>\nwrapped draft' $'> \033[2mdim draft\033[0m'; do
@@ -987,7 +994,8 @@ test_matrix_agy_separated_independent_idle_signals() {
   assert_screen "agy stale footer above a prefixed shell" unknown "$CAPS_STYLED_NOID" "$screen"$'\nuser@host $' '' probe-absent
   assert_screen "agy stale footer above activity" unknown "$CAPS_STYLED_NOID" "$screen"$'\nWorking on request...' '' probe-absent
   assert_screen "agy stale footer above a shell" unknown "$CAPS_STYLED_NOID" "$screen"$'\n$' '' probe-absent
-  pass "matrix: agy separated composer survives either idle signal loss and refuses drafts or contradictory identity"
+  unset FM_COMPOSER_LIFECYCLE
+  pass "matrix: agy separated composer proves lifecycle-only empty from either idle signal and refuses drafts or contradictory identity"
 }
 test_matrix_agy_separated_independent_idle_signals
 

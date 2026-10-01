@@ -67,8 +67,8 @@
 #   left-bar   - opencode: rows prefixed by a heavy left bar `┃` with no
 #                closing border, holding the idle hint, blank rows, and a
 #                mode/model footer line.
-#   separated  - pi: content rows between two solid horizontal `─` rules, no
-#                glyph and no side border. Provable only with a live agent
+#   separated  - content rows between two solid horizontal `─` rules, no
+#                side border. Pi has no glyph and needs a live agent
 #                identity reporting an idle/done pi (herdr `agent
 #                get`; the tmux foreground-process probe), because a blank
 #                region between two transcript rules is otherwise exactly the
@@ -77,6 +77,11 @@
 #                different, self-proving thing: real claude 2.x draws exactly
 #                that (`─` rule, `❯`+NBSP, `─` rule), so the glyph inside the
 #                pair carries the shape and no identity is needed.
+#                agy 1.2.14 puts `>` inside the pair: that shape requires
+#                native agy idle/done identity OR the adjacent `? for shortcuts`
+#                footer, with contradictory native identity/state refusing.
+#                The shell glyph alone remains unknown, and every nonblank
+#                content byte after it is pending (no ghost stripping).
 #
 # THE COMPOSER FOOTER ZONE (task firstmate-doorbell-vals-pending-p1): a
 # harness draws its own furniture BELOW the composer - a user statusLine, a
@@ -117,8 +122,8 @@
 # can prove a left-bar envelope and open a zone under it.
 #
 # THE SAFETY RULE for glyphs: a bare shell prompt glyph (`>` `$` `%` `#`) -
-# what a pane shows once its agent has exited to a plain login shell - is a
-# genuine empty agent composer ONLY inside a bordered container. On a bare row
+# what a pane shows once its agent has exited to a plain login shell - needs
+# a proven container: a bordered box or agy's separated proof above. On a bare row
 # it is a dead-shell prompt and classifies `unknown` (never a safe injection
 # target). A `$` followed immediately by a digit is Pi's cost footer, not this
 # prompt (`FM_COMPOSER_PI_STATUS_RE_DEFAULT`).
@@ -742,8 +747,8 @@ fm_composer_classify_content() {  # <bordered> <content> [idle_re] [idle_case] [
 # identity result was supplied, and the verdict depends on it. Adapters answer
 # `need-identity` by running their identity probe once and re-calling with
 # either its result or `probe-absent`; the sentinel never escapes an adapter.
-# Identity stays a lazy second pass so the common non-pi read never pays for
-# the probe.
+# Identity stays a lazy second pass so self-proving glyph composers never
+# pay for the probe.
 #
 # Consumers that can overwrite input or confirm delivery must accept only the
 # exact positive proof they require (`empty`), so unrecognized future verdicts
@@ -1804,6 +1809,57 @@ _fm_composer_classify_bare_pi_overlap() {  # <screen> <styled> <has-identity> <i
   fi
 }
 
+# agy's separated shell-glyph composer is proven by native identity or its
+# adjacent idle footer, never by `>` alone. Inspect plain content so styled
+# drafts cannot disappear as ghost text. This path is shared by every backend;
+# no lifecycle caller bypasses the ordinary proven-empty requirement.
+_fm_composer_agy_verdict() {  # <screen> <has-identity> <identity>
+  local screen=$1 has_identity=$2 identity=$3 plain row content first=1 state=empty
+  local agent='' status='' footer
+  [ "$FM_COMPOSER_SCAN_PI_PAIR_VALID" = 1 ] || { printf 'unknown'; return; }
+  plain=$(printf '%s\n' "$screen" | fm_composer_strip_ansi)
+  row=$((FM_COMPOSER_SCAN_PI_OPEN + 1))
+  while [ "$row" -lt "$FM_COMPOSER_SCAN_PI_CLOSE" ]; do
+    content=$(_fm_composer_screen_row "$row" "$plain")
+    fm_composer_normalize_trim_var content
+    if [ "$first" = 1 ] && [ -n "$content" ]; then
+      case "$content" in
+        '>'|'>'[[:space:]]*) content=${content#>}; first=0 ;;
+        *) printf 'unknown'; return ;;
+      esac
+      fm_composer_normalize_trim_var content
+    fi
+    [ -z "$content" ] || state=pending
+    row=$((row + 1))
+  done
+  [ "$first" = 0 ] || { printf 'unknown'; return; }
+  if [ "$has_identity" = 1 ] && [ -z "$identity" ]; then
+    printf 'need-identity'; return
+  fi
+  if [ "$has_identity" = 1 ] && [ "$identity" != probe-absent ]; then
+    agent=${identity%%$'\t'*}
+    status=${identity#*$'\t'}
+  fi
+  footer=$(_fm_composer_screen_row "$((FM_COMPOSER_SCAN_PI_CLOSE + 1))" "$plain")
+  fm_composer_normalize_trim_var footer
+  # An old idle footer followed by shell output or activity is stale, even
+  # when that shell uses a user@host prefix instead of a row-leading glyph.
+  if printf '%s\n' "$plain" | tail -n +"$((FM_COMPOSER_SCAN_PI_CLOSE + 3))" | grep -q '[^[:space:]]'; then
+    printf 'unknown'; return
+  fi
+  # A different live harness is contradictory evidence, never an agy fallback.
+  case "$agent" in
+    agy) ;;
+    '') case "$footer" in '? for shortcuts'|'? for shortcuts'[[:space:]]*) ;; *) printf 'unknown'; return ;; esac ;;
+    *) printf 'unknown'; return ;;
+  esac
+  if [ "$state" = pending ]; then printf 'pending'; return; fi
+  case "$agent:$status" in
+    agy:idle|agy:done|:) printf 'empty' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
 # The pi separated-shape verdict: identity + structure conjunction (herdr's
 # rule, now fleet-wide). A missing identity capability keeps the shape
 # unknown; an unfetched identity on an identity-capable backend asks the
@@ -1815,6 +1871,17 @@ _fm_composer_classify_bare_pi_overlap() {  # <screen> <styled> <has-identity> <i
 # cannot disprove that, so a blocked pi defers rather than claiming empty.
 _fm_composer_pi_verdict() {  # <screen> <styled> <has_identity> <identity>
   local screen=$1 styled=$2 has_identity=$3 identity=$4 agent agent_status state
+  local first
+  first=$(_fm_composer_screen_row "$((FM_COMPOSER_SCAN_PI_OPEN + 1))" "$screen" | fm_composer_strip_ansi)
+  fm_composer_normalize_trim_var first
+  case "$first" in
+    '>'|'>'[[:space:]]*)
+      if [ "${identity%%$'\t'*}" != pi ]; then
+        _fm_composer_agy_verdict "$screen" "$has_identity" "$identity"
+        return 0
+      fi
+      ;;
+  esac
   if [ "$has_identity" != 1 ]; then
     printf 'unknown'
     return 0

@@ -156,6 +156,44 @@ if fm_backend_tmux_resolve_bare_selector "no-such-window-xyz" 2>/dev/null; then
 fi
 pass "real tmux: fm_backend_tmux_resolve_bare_selector fails for a window that does not exist"
 
+# A real process renders the agy separator shape without launching a harness.
+# The capture proves the footer/native signals genuinely diverge on this OS:
+# tmux's identity probe has no live Pi to report, yet the footer proves empty.
+cat > "$SHIM_DIR/composer.sh" <<'SH'
+#!/usr/bin/env bash
+printf '\033[2J\033[H────────────────────────\n>\n────────────────────────\n? for shortcuts\033[2;2H'
+sleep 60
+SH
+tmux new-window -d -t "$SESSION:" -n agy-shape "bash '$SHIM_DIR/composer.sh'" \
+  || fail "could not start the synthetic composer process"
+AGY_TARGET="$SESSION:agy-shape"
+wait_for_capture_text "$AGY_TARGET" '? for shortcuts' || fail "synthetic footer never rendered"
+if fm_tmux_composer_identity "$AGY_TARGET" >/dev/null; then
+  fail "synthetic process unexpectedly has native agent identity on $(uname -s)"
+fi
+[ "$(fm_backend_composer_state tmux "$AGY_TARGET")" = empty ] \
+  || fail "real tmux: agy footer alone must prove the separated composer empty"
+# Blind the independent rendered signal in that same real capture.
+screen=$(tmux capture-pane -p -e -t "$AGY_TARGET")
+screen=$(printf '%s\n' "$screen" | sed 's/? for shortcuts//')
+case "$screen" in *'? for shortcuts'*) fail "the footer blinding was vacuous" ;; esac
+[ "$(fm_composer_classify_screen 'styled=1' "$screen")" = unknown ] \
+  || fail "neither idle signal must remain unknown"
+[ "$(fm_composer_classify_screen $'styled=1\nidentity=1' "$screen" '' $'agy\tidle')" = empty ] \
+  || fail "native agy idle must survive rendered footer loss"
+# The process is not a line editor; capture a separately rendered draft below.
+cat > "$SHIM_DIR/draft.sh" <<'SH'
+#!/usr/bin/env bash
+printf '\033[2J\033[H────────────────────────\n> typed draft\n────────────────────────\n? for shortcuts\033[2;14H'
+sleep 60
+SH
+tmux new-window -d -t "$SESSION:" -n agy-draft "bash '$SHIM_DIR/draft.sh'" \
+  || fail "could not start the synthetic draft process"
+wait_for_capture_text "$SESSION:agy-draft" 'typed draft' || fail "synthetic draft never rendered"
+[ "$(fm_backend_composer_state tmux "$SESSION:agy-draft")" = pending ] \
+  || fail "real tmux: agy footer must not erase draft text"
+pass "real tmux: agy separator proof survives independent idle signal loss and preserves drafts ($(uname -s))"
+
 # --- kill and recovery-grade missing-window classification ------------------
 
 fm_backend_tmux_kill "$TARGET"

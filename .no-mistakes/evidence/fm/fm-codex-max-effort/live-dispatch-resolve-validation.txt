@@ -1,0 +1,21 @@
+=== codex gpt-6-astra effort=max (real ~/.codex/models_cache.json)
+exit=0
+dispatch-resolve: error (http 000 after 3 ms: )
+dispatch-resolve:
+  status: error
+=== codex gpt-5.6-luna effort=max (real ~/.codex/models_cache.json)
+exit=0
+dispatch-resolve: error (http 000 after 3 ms: )
+dispatch-resolve:
+  status: error
+=== codex gpt-5.5 effort=max (real ~/.codex/models_cache.json)
+exit=2
+error: malformed rules file: /tmp/fmcx.7UaC2n/home/config/crew-dispatch.json - each use profile effort must be supported by its harness and model
+=== codex gpt-5 effort=high (real ~/.codex/models_cache.json)
+exit=0
+dispatch-resolve: error (http 000 after 3 ms: )
+dispatch-resolve:
+  status: error
+=== codex gpt-5 effort=max (real ~/.codex/models_cache.json)
+exit=2
+error: malformed rules file: /tmp/fmcx.7UaC2n/home/config/crew-dispatch.json - each use profile effort must be supported by its harness and model

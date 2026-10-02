@@ -1,0 +1,1 @@
+ 677091 node /home/azur/.nvm/versions/node/v24.21.0/bin/codex --model gpt-6-astra -c model_reasoning_effort="max" --dangerously-bypass-approvals-and-sandbox --disable hooks -c notify=["bash","-c","touch '/tmp/fmcx.7UaC2n/home/state/cxastra-z9.turn-ended'"] 

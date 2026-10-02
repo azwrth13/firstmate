@@ -572,6 +572,7 @@ test_codex_catalog_effort() {
 astra-max|gpt-6-astra|max|{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"max"}]}]}|flag
 future-max|future-model|max|{"models":[{"slug":"future-model","supported_reasoning_levels":[{"effort":"max"}]}]}|flag
 unlisted-max|unlisted|max|{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"max"}]}]}|omit
+unlisted-high|unlisted|high|{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"max"}]}]}|flag
 unsupported-max|gpt-6-astra|max|{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"high"}]}]}|omit
 unsupported-high|gpt-6-astra|high|{"models":[{"slug":"gpt-6-astra","supported_reasoning_levels":[{"effort":"low"}]}]}|omit
 missing-max|gpt-6-astra|max|missing|omit

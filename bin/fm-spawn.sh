@@ -2568,9 +2568,10 @@ effort_flag_for_harness() {
     ;;
   codex)
     # fm-harness owns catalog capability lookup and unavailable-catalog fallback.
-    if "$SCRIPT_DIR/fm-harness.sh" codex-supports-effort "$model" "$effort"; then
-      printf -- '-c %s ' "$(shell_quote "model_reasoning_effort=\"$effort\"")"
-    fi
+    # The lookup runs in the launch shell so it reads the worker's CODEX_HOME.
+    printf -- '$(if %s codex-supports-effort %s %s; then printf %s -c %s; fi) ' \
+      "$(shell_quote "$SCRIPT_DIR/fm-harness.sh")" "$(shell_quote "$model")" "$(shell_quote "$effort")" \
+      "'%s '" "$(shell_quote "model_reasoning_effort=\"$effort\"")"
     ;;
   grok)
     # grok exposes both --effort and --reasoning-effort; firstmate's profile
